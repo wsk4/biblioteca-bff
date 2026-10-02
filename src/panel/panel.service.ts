@@ -117,6 +117,7 @@ export class PanelService {
   private async enviar<T>(
     metodo: string,
     url: string,
+    token: string,
     cuerpo?: unknown,
   ): Promise<T> {
     let respuesta: Response;
@@ -124,7 +125,10 @@ export class PanelService {
     try {
       respuesta = await fetch(url, {
         method: metodo,
-        headers: cuerpo ? { 'Content-Type': 'application/json' } : {},
+        headers: {
+          ...(cuerpo ? { 'Content-Type': 'application/json' } : {}),
+          Authorization: token,
+        },
         body: cuerpo ? JSON.stringify(cuerpo) : undefined,
       });
     } catch {
@@ -142,7 +146,11 @@ export class PanelService {
     return (await respuesta.json()) as T;
   }
 
-  async prestar(sub: string, libroId: unknown): Promise<Prestamo> {
+  async prestar(
+    sub: string,
+    token: string,
+    libroId: unknown,
+  ): Promise<Prestamo> {
     if (
       typeof libroId !== 'number' ||
       !Number.isInteger(libroId) ||
@@ -162,8 +170,7 @@ export class PanelService {
     }
 
     const enPrestamo = prestamos.filter(
-      (prestamo) =>
-        prestamo.libroId === libroId && !prestamo.devuelto,
+      (prestamo) => prestamo.libroId === libroId && !prestamo.devuelto,
     ).length;
 
     if (enPrestamo >= libro.ejemplares) {
@@ -178,7 +185,7 @@ export class PanelService {
         .toISOString()
         .slice(0, 10);
 
-    return this.enviar<Prestamo>('POST', this.prestamosUrl, {
+    return this.enviar<Prestamo>('POST', this.prestamosUrl, token, {
       libroId,
       usuarioSub: sub,
       desde: dia(0),
@@ -187,7 +194,11 @@ export class PanelService {
     });
   }
 
-  async devolver(sub: string, id: number): Promise<Prestamo> {
+  async devolver(
+    sub: string,
+    token: string,
+    id: number,
+  ): Promise<Prestamo> {
     const [, prestamos] = await this.traerTodo();
 
     const prestamo = prestamos.find((elemento) => elemento.id === id);
@@ -205,6 +216,7 @@ export class PanelService {
     return this.enviar<Prestamo>(
       'DELETE',
       `${this.prestamosUrl}/${id}`,
+      token,
     );
   }
 }

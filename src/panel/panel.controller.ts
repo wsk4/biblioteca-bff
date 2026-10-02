@@ -1,5 +1,13 @@
 import {
-  Body, Controller, Delete, Get, Param, ParseIntPipe, Post, Req, UseGuards,
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  ParseIntPipe,
+  Post,
+  Req,
+  UseGuards,
 } from '@nestjs/common';
 import { JwtGuard, type Usuario } from '../auth/jwt.guard.js';
 import { RolGuard } from '../auth/rol.guard.js';
@@ -12,16 +20,16 @@ export class PanelController {
   constructor(private readonly panel: PanelService) {}
 
   @Get()
-    @Roles('lectores', 'bibliotecarios')
-    async mios(@Req() req: { usuario: Usuario }) {
-      return {
-        usuario: {
-          sub: req.usuario.sub,
-          grupos: req.usuario.grupos,
-        },
-        ...(await this.panel.mios(req.usuario.sub)),
-      };
-    }
+  @Roles('lectores', 'bibliotecarios')
+  async mios(@Req() req: { usuario: Usuario }) {
+    return {
+      usuario: {
+        sub: req.usuario.sub,
+        grupos: req.usuario.grupos,
+      },
+      ...(await this.panel.mios(req.usuario.sub)),
+    };
+  }
 
   @Get('serie')
   async serie(@Req() req: { usuario: Usuario }) {
@@ -40,13 +48,35 @@ export class PanelController {
     };
   }
 
-    @Post('prestamos')
-  async prestar(@Req() req: { usuario: Usuario }, @Body() cuerpo: { libroId?: unknown }) {
-    return this.panel.prestar(req.usuario.sub, cuerpo.libroId);
+  @Post('prestamos')
+  async prestar(
+    @Req()
+    req: {
+      usuario: Usuario;
+      headers: Record<string, string | undefined>;
+    },
+    @Body() cuerpo: { libroId?: unknown },
+  ) {
+    return this.panel.prestar(
+      req.usuario.sub,
+      req.headers['authorization'] ?? '',
+      cuerpo.libroId,
+    );
   }
 
   @Delete('prestamos/:id')
-  async devolver(@Req() req: { usuario: Usuario }, @Param('id', ParseIntPipe) id: number) {
-    return this.panel.devolver(req.usuario.sub, id);
+  async devolver(
+    @Req()
+    req: {
+      usuario: Usuario;
+      headers: Record<string, string | undefined>;
+    },
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    return this.panel.devolver(
+      req.usuario.sub,
+      req.headers['authorization'] ?? '',
+      id,
+    );
   }
 }
